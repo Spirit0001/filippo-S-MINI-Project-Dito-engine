@@ -1,88 +1,178 @@
 package com.innoveworkshop.gametest
 
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.innoveworkshop.gametest.assets.DroppingRectangle
-import com.innoveworkshop.gametest.engine.Circle
-import com.innoveworkshop.gametest.engine.GameObject
-import com.innoveworkshop.gametest.engine.GameSurface
-import com.innoveworkshop.gametest.engine.Rectangle
-import com.innoveworkshop.gametest.engine.Vector
+import androidx.appcompat.app.AppCompatDelegate
+import com.innoveworkshop.gametest.engine.*
 
-class MainActivity : AppCompatActivity() {
+
+private fun checkWallCollision(circle: Circle, surface: GameSurface) {
+    // Check left edge
+    if (circle.position.x - circle.radius < 0) {
+        circle.position.x = circle.radius
+    }
+
+    // Check right edge
+    if (circle.position.x + circle.radius > surface.width) {
+        circle.position.x = surface.width - circle.radius
+    }
+
+    // Check top edge
+    if (circle.position.y - circle.radius < 0) {
+        circle.position.y = circle.radius
+    }
+
+    // Check bottom edge
+    if (circle.position.y + circle.radius > surface.height) {
+        circle.position.y = surface.height - circle.radius
+    }
+}
+
+class MainActivity : AppCompatActivity(), SensorEventListener {
     protected var gameSurface: GameSurface? = null
-    protected var upButton: Button? = null
-    protected var downButton: Button? = null
-    protected var leftButton: Button? = null
-    protected var rightButton: Button? = null
-
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var circle: Circle? = null
     protected var game: Game? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Keeps phone in light mode
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+
         gameSurface = findViewById<View>(R.id.gameSurface) as GameSurface
         game = Game()
         gameSurface!!.setRootGameObject(game)
 
-        setupControls()
+        setUpSensorStuff()
     }
 
-    private fun setupControls() {
-        upButton = findViewById<View>(R.id.up_button) as Button
-        upButton!!.setOnClickListener { game!!.circle!!.position.y -= 10f }
+    private fun setUpSensorStuff() {
+        // Initialize SensorManager and Accelerometer
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-        downButton = findViewById<View>(R.id.down_button) as Button
-        downButton!!.setOnClickListener { game!!.circle!!.position.y += 10f }
+        if (accelerometer == null) {
+            Toast.makeText(this, "No accelerometer found on this device.", Toast.LENGTH_LONG).show()
+            Log.e("SensorError", "No accelerometer found on this device.")
+        }
+    }
 
-        leftButton = findViewById<View>(R.id.left_button) as Button
-        leftButton!!.setOnClickListener { game!!.circle!!.position.x -= 10f }
+    override fun onResume() {
+        super.onResume()
+        accelerometer?.also {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
+        }
+    }
 
-        rightButton = findViewById<View>(R.id.right_button) as Button
-        rightButton!!.setOnClickListener { game!!.circle!!.position.x += 10f }
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+    }
+
+    // This method processes accelerometer data
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+            val sides = event.values[0]
+            val upDown = event.values[1]
+
+            circle?.apply {
+                position.x += -sides * 2  // Move horizontally based on tilt
+                position.y += upDown * 2 // Move vertically based on tilt
+
+                gameSurface?.let { checkWallCollision(this, it) } // Ensure the circle stays within bounds
+            }
+        }
+    }
+
+    // This method is required but not used here
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        // Not used in this implementation
     }
 
     inner class Game : GameObject() {
-        var circle: Circle? = null
-
         override fun onStart(surface: GameSurface?) {
             super.onStart(surface)
 
+            // Initialize the circle at the center
             circle = Circle(
                 (surface!!.width / 2).toFloat(),
                 (surface.height / 2).toFloat(),
-                100f,
+                20f,
+                25f,
                 Color.RED
             )
             surface.addGameObject(circle!!)
 
+            // Add walls
             surface.addGameObject(
                 Rectangle(
-                    Vector((surface.width / 3).toFloat(), (surface.height / 3).toFloat()),
-                    200f, 100f, Color.GREEN
+                    Vector((surface.width / 3).toFloat(), (surface.height / 30).toFloat()),
+                    2000f, 5f, Color.BLACK
+                )
+            )
+            surface.addGameObject(
+                Rectangle(
+                    Vector((surface.width / 3).toFloat(), (surface.height / 1).toFloat()),
+                    2000f, 5f, Color.BLACK
                 )
             )
 
-            surface.addGameObject(
-                DroppingRectangle(
-                    Vector((surface.width / 3).toFloat(), (surface.height / 3).toFloat()),
-                    100f, 100f, 10f, Color.rgb(128, 14, 80)
+            // Add maze elements as needed
+
+            surface.addGameObject( // 1
+                RectangleRotated(
+                    Vector((surface.width / 2.2).toFloat(), (surface.height /1).toFloat()),
+                    90f, 820f, Color. BLACK
                 )
             )
+
+            surface.addGameObject( // 2
+                RectangleRotated(
+                    Vector((surface.width / 1.83).toFloat(), (surface.height /1).toFloat()),
+                    90f, 190f, Color. BLACK
+                )
+            )
+
+            surface.addGameObject( // 3
+                RectangleRotated(
+                    Vector((surface.width / 1.83).toFloat(), (surface.height /1.215).toFloat()),
+                    90f, 500f, Color. BLACK
+                )
+            )
+
+            surface.addGameObject( // 4
+                RectangleRotated(
+                    Vector((surface.width / 1.6).toFloat(), (surface.height /1.182).toFloat()),
+                    800f, 15f, Color. BLACK
+                )
+            )
+
+            surface.addGameObject( // 5
+                RectangleRotated(
+                    Vector((surface.width / 1.6).toFloat(), (surface.height /1.100).toFloat()),
+                    800f, 15f, Color. BLACK
+                )
+            )
+
+
+
         }
 
         override fun onFixedUpdate() {
             super.onFixedUpdate()
-
-            if (!circle!!.isFloored && !circle!!.hitRightWall() && !circle!!.isDestroyed) {
-                circle!!.setPosition(circle!!.position.x + 1, circle!!.position.y + 1)
-            } else {
-                circle!!.destroy()
-            }
+            // Additional physics updates if required
         }
     }
 }

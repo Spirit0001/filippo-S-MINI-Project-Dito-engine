@@ -1,18 +1,15 @@
 package com.innoveworkshop.gametest.engine
+
 import android.graphics.Canvas
 import android.graphics.Paint
 
-class Circle(x: Float, y: Float,
-             dropRate: Float,
-             var radius: Float, color: Int) : GameObject(x, y), Caged {
+class CirclePlayer(x: Float, y: Float, var radius: Float, color: Int) : GameObject(x, y),Caged {
     // Set up the paint.
     var paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    var dropRate: Float = 0f
 
     init {
         paint.color = color
         paint.style = Paint.Style.FILL
-        this.dropRate = dropRate
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -21,7 +18,7 @@ class Circle(x: Float, y: Float,
     }
 
     override fun hitLeftWall(): Boolean {
-        return (position.x - radius) <= 0
+        return (position.x - radius) <= gameSurface!!.width
     }
 
     override fun hitRightWall(): Boolean {
@@ -30,7 +27,4 @@ class Circle(x: Float, y: Float,
 
     override val isFloored: Boolean
         get() = (position.y + radius) >= gameSurface!!.height
-
 }
-
-

@@ -69,7 +69,7 @@ class GameSurface @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        root!!.onDraw(canvas)
+        root?.onDraw(canvas)
         for (gameObject in gameObjects) {
             gameObject.onDraw(canvas)
         }
@@ -81,7 +81,7 @@ class GameSurface @JvmOverloads constructor(
                 gameObject.onFixedUpdate()
             }
 
-            root!!.onFixedUpdate()
+            root?.onFixedUpdate()
             invalidate()
         }
     }
