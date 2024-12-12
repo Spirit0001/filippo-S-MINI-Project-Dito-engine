@@ -11,8 +11,10 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import com.innoveworkshop.gametest.assets.FrictionFloor
 import com.innoveworkshop.gametest.engine.*
-import kotlin.math.pow
+
+
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
     protected var gameSurface: GameSurface? = null
@@ -78,9 +80,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
-    // This method is required but not used here
+
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Not used in this implementation
     }
 
     private fun checkWallCollision(circle: Circle, walls: List<Rectangle>) {
@@ -109,9 +110,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             if (circle.collidesWith(it)) {
                 Toast.makeText(this, "You reached the exit!", Toast.LENGTH_LONG).show()
                 Log.d("GameStatus", "Player reached the exit point!")
+                circle.destroy()
             }
         }
     }
+
+
 
     inner class Game : GameObject() {
         override fun onStart(surface: GameSurface?) {
@@ -122,37 +126,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             val screenHeight = surface.height
 
             // Initialize the circle at the center of the screen
-            circle = Circle(
-                (screenWidth / 6.5).toFloat(),
-                (screenHeight / 4).toFloat(),
-                35f,
-                Color.RED,
-            )
-            surface.addGameObject(circle!!)
 
             // Create a better and scaled-up maze with an exit point
             val mazeLayout = arrayOf(
-                "111111111111111111",
-                "100000000010000001",
-                "1011111010101111E1",
-                "10100010101000011",
-                "10100000001111011",
-                "10100111101001010",
-                "11100100101011011",
-                "10000010101010001",
-                "10111011001000101",
-                "10101011011011101",
-                "10001010011010001",
-                "11111110111110111",
-                "000000101000001",
-                "000000100011111",
-                "000000101110000",
-                "000111100000111",
-                "000111100000111",
-                "000111100000111",
-                "000111100000111",
-                "000111100000111",
-                "000111100000111"
+                "11111111111111111111111111",
+                "100000000010000FFF00000001",
+                "10111110101011111011100001",
+                "10100010101000011010111111",
+                "10100000001111011010100000",
+                "10100111101001011000100000",
+                "11100100101011011110111111",
+                "100000101010100F1010000001",
+                "101110100010001F1000011111",
+                "101010110110111F1011110000",
+                "100010100110100F1000010000",
+                "11111110111110111011010000",
+                "00000010100000101000011110",
+                "00000010001111101FFFF000E1",
+                "00000010001000001FFFF11111",
+                "00000011111000001111110000",
             )
 
             val cellWidth = screenWidth / mazeLayout[0].length
@@ -175,6 +167,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                             mazeWalls.add(wall)
                             surface.addGameObject(wall)
                         }
+                        'F'-> {
+                            val FrictionFloor = FrictionFloor(
+                                Vector(xPosition.toFloat(), yPosition.toFloat()),
+                                cellWidth.toFloat(),
+                                cellHeight.toFloat(),
+                                Color.YELLOW,
+                                1f
+                            )
+                            surface.addGameObject(FrictionFloor)
+
+                        }
+
                         'E' -> {
                             exitPoint = Rectangle(
                                 Vector(xPosition.toFloat(), yPosition.toFloat()),
@@ -187,11 +191,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     }
                 }
             }
+
+
+            circle = Circle(
+                (screenWidth / 6.5).toFloat(),
+                (screenHeight / 4).toFloat(),
+                20f,
+                Color.RED,
+            )
+            surface.addGameObject(circle!!)
+
+
         }
 
         override fun onFixedUpdate() {
             super.onFixedUpdate()
-            // Additional physics updates if required
+
         }
     }
 }
@@ -209,3 +224,4 @@ fun Circle.collidesWith(rect: Rectangle): Boolean {
     // Check if the distance is less than or equal to the radius (collision occurs)
     return (dx * dx + dy * dy) <= (this.radius * this.radius)
 }
+
